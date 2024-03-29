@@ -4,11 +4,11 @@
 
 <p align="center">
 	<a href="https://github.com/buyoio/runr/stargazers">
-		<img alt="Stargazers" src="https://img.shields.io/github/stars/arg-sh/argsh?style=for-the-badge&logo=starship&color=C9CBFF&logoColor=D9E0EE&labelColor=302D41"></a>
+		<img alt="Stargazers" src="https://img.shields.io/github/stars/buyoio/runr?style=for-the-badge&logo=starship&color=C9CBFF&logoColor=D9E0EE&labelColor=302D41"></a>
 	<a href="https://github.com/buyoio/runr/releases/latest">
-		<img alt="Releases" src="https://img.shields.io/github/release/arg-sh/argsh.svg?style=for-the-badge&logo=github&color=F2CDCD&logoColor=D9E0EE&labelColor=302D41"/></a>
+		<img alt="Releases" src="https://img.shields.io/github/release/buyoio/runr.svg?style=for-the-badge&logo=github&color=F2CDCD&logoColor=D9E0EE&labelColor=302D41"/></a>
 	<a href="https://github.com/buyoio/runr/issues">
-		<img alt="Issues" src="https://img.shields.io/github/issues/arg-sh/argsh?style=for-the-badge&logo=gitbook&color=B5E8E0&logoColor=D9E0EE&labelColor=302D41"></a>
+		<img alt="Issues" src="https://img.shields.io/github/issues/buyoio/runr?style=for-the-badge&logo=gitbook&color=B5E8E0&logoColor=D9E0EE&labelColor=302D41"></a>
 </p>
 
 runr is a simple tool to run commands on multiple servers. It is designed to be simple and easy to spin up your ci runner infrastructure. One of its core features is the ability to manage static servers but also integrates with Cloud providers like Hetzner Cloud to spin up servers on demand (e.g. for e2e testing). 
