@@ -1,0 +1,27 @@
+# vim: filetype=markdown
+# This should work for all dedicated besides SX-Line
+# ! having **2 Drives**
+
+## HARD DISK DRIVE(S)
+DRIVE1 /dev/sda
+DRIVE2 /dev/sdb
+
+## SOFTWARE RAID
+### activate software RAID?  < 0 | 1 >
+SWRAID 0
+
+### Choose the level for the software RAID < 0 | 1 | 10 >
+SWRAIDLEVEL 0
+
+## HOSTNAME
+HOSTNAME {{ .Runner.Name }}
+
+## MISC CONFIG
+USE_KERNEL_MODE_SETTING yes
+
+## PARTITIONS / FILESYSTEMS
+PART /boot ext3 512M
+PART / ext4 all
+
+## OPERATING SYSTEM IMAGE
+IMAGE /root/.oldroot/nfs/install/../images/Ubuntu-2204-jammy-amd64-base.tar.gz

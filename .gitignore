@@ -1,0 +1,17 @@
+*.coverprofile
+*.exe
+*.orig
+.idea
+.logs
+.bak
+/.local/
+/site/
+coverage.txt
+vendor
+www
+tilt-extension
+/main
+__debug_bin*
+
+.runr.secrets.yaml
+.secrets

@@ -1,0 +1,137 @@
+#cloud-config
+# vim: filetype=helm-template
+
+package_update: true
+package_upgrade: true
+package_reboot_if_required: true
+
+disable_root: 0
+ssh_pwauth: 0
+
+mounts:
+# One of the first things you should do is secure the shared memory used on the system.
+- [ tmpfs, /run/shm, "tmpfs", "ro,noexec,nosuid", "0", "0" ]
+
+apt:
+  preserve_sources_list: true
+  sources:
+    docker.list:
+      source: deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable
+      keyid: 9DC858229FC7DD38854AE2D88D81803C0EBFCD88
+    nodejs.list:
+      source: deb [arch=amd64] https://deb.nodesource.com/node_16.x focal main
+      keyid: 9FD3B784BC1C6FC31A8A0A1C1655A0AB68576280
+    yarn.list:
+      source: deb https://dl.yarnpkg.com/debian/ stable main
+      keyid: 72ECF46A56B4AD39C907BBB71646B01B86E50310
+    git-lfs.list:
+      source: deb https://packagecloud.io/github/git-lfs/ubuntu/ focal main
+      keyid: 6D398DBD30DD78941E2C4797FE2A5F8BDC282033
+
+packages:
+- iptables
+- apt-transport-https
+- ca-certificates
+- software-properties-common
+- gnupg-agent
+- git
+- git-lfs
+- docker-ce-cli
+- docker-ce
+- containerd.io
+- dnsmasq
+# - nodejs
+# - yarn
+# - jq
+
+write_files:
+  - path: /etc/sysctl.d/20-containerization-optimization.conf
+    owner: user:root
+    permissions: '0655'
+    content: |
+      fs.inotify.max_queued_events=16384
+      fs.inotify.max_user_instances=8192
+      fs.inotify.max_user_watches=524288
+      fs.file-max=512000
+      vm.max_map_count=262144
+      vm.swappiness=0
+      vm.vfs_cache_pressure=50
+      vm.overcommit_memory=1
+      vm.panic_on_oom=0
+      kernel.dmesg_restrict=1
+      kernel.panic=10
+      kernel.panic_on_oops=1
+      kernel.keys.root_maxbytes=25000000
+      net.core.default_qdisc=fq
+      net.bridge.bridge-nf-call-iptables=1
+      net.ipv4.tcp_slow_start_after_idle=0
+      net.ipv4.tcp_mtu_probling=1
+      net.ipv4.tcp_congestion_control=bbr
+      net.ipv4.ip_forward=1
+      net.ipv4.conf.all.forwarding=1
+      net.ipv6.conf.default.forwarding=1
+      # for kubeconfig (ubuntu related)
+      net.netfilter.nf_conntrack_max=524288
+  - path: /etc/docker/daemon.json
+    owner: root:root
+    permissions: '0655'
+    content: |
+      {
+        "insecure-registries": [
+          "125.25.2.0/24",
+          "125.25.25.0/8"
+        ]
+      }
+  - path: /root/bootstrap.sh
+    owner: root:root
+    permissions: '0655'
+    content: |
+{{ index .Args 0 | indent 6 }}
+
+groups:
+- docker  
+
+users:
+- name: "user"
+  lock_passwd: true
+  shell: /bin/bash
+  ssh-authorized-keys: {{ range .TeamSSHKeys "ops" }}
+  - "{{ . }}"
+  {{- end }}
+  groups:
+  - docker
+  sudo:
+  - ALL=(ALL) NOPASSWD:ALL
+
+runcmd:
+# https://bugs.launchpad.net/cloud-init/+bug/1486113/comments/12
+# write_files after the users module (ensure right user permissions)
+- cloud-init single --name write_files --frequency once
+# make sure kernel conf is up to date (if there was no restart)
+- sysctl --system
+
+# execute custom scripts - bootstrap
+- /root/bootstrap.sh
+
+- systemctl disable systemd-resolved
+- systemctl stop systemd-resolved
+- systemctl mask systemd-resolved
+
+- echo "nameserver 127.0.0.1\nnameserver 1.1.1.1" > /etc/resolv.conf
+- systemctl restart dnsmasq
+
+# reload docker configuration
+- systemctl restart docker
+  
+# setup github runner
+- mkdir -p /home/user
+- cd /home/user
+{{ range .RunnerSetup -}}
+- {{ . }}
+{{ end }}
+
+# setup env
+- mkdir -p /home/user/.docker
+- chown -R user:user /home/user
+
+final_message: "The system is finally up, after ${UPTIME} seconds"

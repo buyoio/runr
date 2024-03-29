@@ -1,0 +1,256 @@
+# Based on https://github.com/tilt-dev/tilt/blob/master/.goreleaser.yml
+project_name: runr
+builds:
+- main: ./cmd/runr/main.go
+  id: runr-darwin
+  flags:
+  - -tags=osusergo
+  - -mod=vendor
+  goos:
+  - darwin
+  goarch:
+  - amd64
+  - arm64
+  env:
+  # clang is a cross-compiler by default, so the same CC/CXX works
+  # for arm64 (M1) & amd64 (Intel) builds
+  - CGO_ENABLED=1
+  - CC=o64h-clang
+  - CXX=o64h-clang++
+- main: ./cmd/runr/main.go
+  id: runr-linux-arm64
+  flags:
+    - -tags=osusergo
+    - -mod=vendor
+  goos:
+    - linux
+  goarch:
+    - arm64
+  env:
+    - CGO_ENABLED=1
+    - CC=aarch64-linux-gnu-gcc
+    - CXX=aarch64-linux-gnu-g++
+- main: ./cmd/runr/main.go
+  id: runr-linux-musl-arm64
+  flags:
+    - -tags=osusergo
+    - -mod=vendor
+  ldflags:
+    - -s -w 
+    - -X {{ .ModulePath }}/pkg/cmd/version.version={{.Version}} 
+    - -X {{ .ModulePath }}/pkg/cmd/version.commit={{.Commit}} 
+    - -X {{ .ModulePath }}/pkg/cmd/version.date={{.Date}} 
+    - -linkmode external -extldflags "-static"
+  goos:
+    - linux
+  goarch:
+    - arm64
+  env:
+    - CGO_ENABLED=1
+    - CC=aarch64-linux-musl-gcc
+    - CXX=aarch64-linux-musl-g++
+- main: ./cmd/runr/main.go
+  id: runr-linux-arm
+  flags:
+    - -tags=osusergo
+    - -mod=vendor
+  goos:
+    - linux
+  goarch:
+    - arm
+  env:
+    - CGO_ENABLED=1
+    - CC=arm-linux-gnueabi-gcc
+    - CXX=arm-linux-gnueabi-g++
+- main: ./cmd/runr/main.go
+  id: runr-linux-amd64
+  flags:
+    - -tags=osusergo
+    - -mod=vendor
+  goos:
+    - linux
+  goarch:
+    - amd64
+  env:
+    - CGO_ENABLED=1
+- main: ./cmd/runr/main.go
+  id: runr-linux-musl-amd64
+  flags:
+    - -tags=osusergo
+    - -mod=vendor
+  ldflags:
+    - -s -w 
+    - -X {{ .ModulePath }}/pkg/cmd/version.version={{.Version}} 
+    - -X {{ .ModulePath }}/pkg/cmd/version.commit={{.Commit}} 
+    - -X {{ .ModulePath }}/pkg/cmd/version.date={{.Date}} 
+    - -linkmode external -extldflags "-static"
+  goos:
+    - linux
+  goarch:
+    - amd64
+  env:
+    - CGO_ENABLED=1
+    - CC=x86_64-linux-musl-gcc
+    - CXX=x86_64-linux-musl-g++
+- main: ./cmd/runr/main.go
+  id: runr-windows-amd64
+  flags:
+  - -tags=osusergo
+  - -mod=vendor
+  goos:
+  - windows
+  goarch:
+  - amd64
+  env:
+    - CGO_ENABLED=1
+    - CGO_LDFLAGS=-static
+    - CC=x86_64-w64-mingw32-gcc
+    - CXX=x86_64-w64-mingw32-g++
+archives:
+- id: default
+  name_template: >-
+      {{ .ProjectName }}.{{ .Version }}.
+      {{- if eq .Os "darwin"}}mac
+      {{- else }}{{ .Os }}{{ end }}.
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+  builds:
+    - runr-darwin
+    - runr-linux-amd64
+    - runr-linux-arm64
+    - runr-linux-arm
+    - runr-windows-amd64
+  format_overrides:
+    - goos: windows
+      format: zip
+- id: alpine
+  name_template: >-
+      {{ .ProjectName }}.{{ .Version }}.{{ .Os }}-alpine.
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else }}{{ .Arch }}{{ end }}
+  builds:
+    - runr-linux-musl-amd64
+    - runr-linux-musl-arm64
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ .Tag }}-next"
+  
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+    - '^docs?:'
+    - '^tests?:'
+    - '^cleanup:'
+    - '^circleci:'
+    - '^ci:'
+    
+brews:
+- tap:
+    owner: buyoio
+    name: homebrew-tap
+  commit_author:
+    name: runr Dev
+    email: hi@runr.cloud
+  ids:
+    - default
+  url_template: "https://github.com/buyoio/runr/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+  homepage: "https://runr.cloud/"
+  description: "Manage your runner infrastructure"
+  install: |
+    bin.install "runr"
+    
+    # Install bash completion
+    output = Utils.safe_popen_read("#{bin}/runr", "completion", "bash")
+    (bash_completion/"runr").write output
+
+    # Install zsh completion
+    output = Utils.safe_popen_read("#{bin}/runr", "completion", "zsh")
+    (zsh_completion/"_runr").write output
+
+    # Install fish completion
+    output = Utils.safe_popen_read("#{bin}/runr", "completion", "fish")
+    (fish_completion/"runr.fish").write output
+  test: |
+    system "#{bin}/runr version"
+dockers:
+- goos: linux
+  goarch: amd64
+  ids:
+    - runr-linux-amd64
+  image_templates:
+    - "buyoio/runr:{{ .Tag }}-amd64"
+    - "docker/runr:{{ .Tag }}-amd64"
+  dockerfile: scripts/runr.Dockerfile
+  use: buildx
+  build_flag_templates:
+  - "--platform=linux/amd64"
+  - "--label=org.opencontainers.image.title={{ .ProjectName }}"
+  - "--label=org.opencontainers.image.description={{ .ProjectName }}"
+  - "--label=org.opencontainers.image.url=https://github.com/buyoio/{{ .ProjectName }}"
+  - "--label=org.opencontainers.image.source=https://github.com/buyoio/{{ .ProjectName }}"
+  - "--label=org.opencontainers.image.version={{ .Version }}"
+  - "--label=org.opencontainers.image.created={{ .Timestamp }}"
+  - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
+  - "--label=org.opencontainers.image.licenses=Apache-2.0"
+- goos: linux
+  goarch: arm64
+  goarm: ''
+  ids:
+    - runr-linux-arm64
+  image_templates:
+    - "buyoio/runr:{{ .Tag }}-arm64"
+    - "docker/runr:{{ .Tag }}-arm64"
+  dockerfile: scripts/runr.Dockerfile
+  use: buildx
+  build_flag_templates:
+  - "--platform=linux/arm64"
+  - "--label=org.opencontainers.image.title={{ .ProjectName }}"
+  - "--label=org.opencontainers.image.description={{ .ProjectName }}"
+  - "--label=org.opencontainers.image.url=https://github.com/buyoio/{{ .ProjectName }}"
+  - "--label=org.opencontainers.image.source=https://github.com/buyoio/{{ .ProjectName }}"
+  - "--label=org.opencontainers.image.version={{ .Version }}"
+  - "--label=org.opencontainers.image.created={{ .Timestamp }}"
+  - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
+  - "--label=org.opencontainers.image.licenses=Apache-2.0"
+docker_manifests:
+- name_template: buyoio/{{ .ProjectName }}:{{ .Tag }}
+  image_templates:
+  - buyoio/{{ .ProjectName }}:{{ .Tag }}-amd64
+  - buyoio/{{ .ProjectName }}:{{ .Tag }}-arm64
+- name_template: buyoio/{{ .ProjectName }}:latest
+  image_templates:
+  - buyoio/{{ .ProjectName }}:{{ .Tag }}-amd64
+  - buyoio/{{ .ProjectName }}:{{ .Tag }}-arm64
+- name_template: docker/{{ .ProjectName }}:{{ .Tag }}
+  image_templates:
+  - docker/{{ .ProjectName }}:{{ .Tag }}-amd64
+  - docker/{{ .ProjectName }}:{{ .Tag }}-arm64
+- name_template: docker/{{ .ProjectName }}:latest
+  image_templates:
+  - docker/{{ .ProjectName }}:{{ .Tag }}-amd64
+  - docker/{{ .ProjectName }}:{{ .Tag }}-arm64
+scoops:
+- url_template: "https://github.com/buyoio/runr/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+  bucket:
+    owner: buyoio
+    name: scoop-bucket
+  commit_author:
+    name: runr Dev
+    email: hi@runr.cloud
+  commit_msg_template: "Scoop update for {{ .ProjectName }} version {{ .Tag }}"
+  homepage: "https://runr.cloud/"
+  description: "Manage your runner infrastructure"
+  license: Apache-2.0
+release:
+  header: |
+    [Install runr](https://docs.runr.cloud/install.html) ⬇️ | [Upgrade runr](https://docs.runr.cloud/upgrade.html) ⬆️
+
+
+# Uncomment these lines if you want to experiment with other
+# parts of the release process without releasing new binaries.
+# release:
+#  disable: true

@@ -1,0 +1,26 @@
+# editor files
+.vscode/
+.idea/
+.bak/
+
+# git
+.git/
+.githooks/
+.gitignore
+
+# generated
+bin/
+out/
+
+# docs
+api/
+**/*.md
+
+# other files not needed for build
+.editorconfig
+.golangci.yml
+Makefile
+tools.go
+
+# build files
+main

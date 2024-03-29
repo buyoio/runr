@@ -1,0 +1,40 @@
+logs:
+  path: .logs
+  level: debug
+
+github:
+  organization: buyoio
+
+runners:
+  _:
+    user: root
+    auth: ssh-agent
+    setup:
+      installimage:
+        file: .github/hetzner/installimage
+    docker:
+      _: 
+        dockerfile:
+          file: .github/runner/Dockerfile
+        quantity: 2
+      default: {}
+      build: {}
+      lint: {}
+  agent01:
+    setup:
+      harbor:
+        tld: docker.buyoio.dev
+        path: /home/user
+    host: 65.21.12.246:22
+
+environments:
+  hcloud:
+    _:
+      type: cpx41
+      image: ubuntu-20.04
+      location: hel1
+    e2e:
+      userdata: 
+        file: .github/runner/cloud-init.yaml
+        args:
+        - file: .github/runner/scripts/bootstrap.sh
