@@ -11,7 +11,9 @@
 		<img alt="Issues" src="https://img.shields.io/github/issues/buyoio/runr?style=for-the-badge&logo=gitbook&color=B5E8E0&logoColor=D9E0EE&labelColor=302D41"></a>
 </p>
 
-runr is a simple tool to run commands on multiple servers. It is designed to be simple and easy to spin up your ci runner infrastructure. One of its core features is the ability to manage static servers but also integrates with Cloud providers like Hetzner Cloud to spin up servers on demand (e.g. for e2e testing). 
+&nbsp;
+
+`runr` is a simple tool to run commands on multiple servers. It is designed to be simple and easy to spin up your ci runner infrastructure. One of its core features is the ability to manage static servers but also integrates with Cloud providers like Hetzner Cloud to spin up servers on demand (e.g. for e2e testing). 
 
 🚧 In construction
 
