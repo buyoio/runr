@@ -140,13 +140,15 @@ func (p *provider) RemoveRunner(name string) error {
 		return err
 	}
 	for _, runner := range runners.Runners {
-		if *runner.Name == name {
+		if strings.HasSuffix(*runner.Name, name) {
 			if isOrga {
 				_, err = p.github.Actions.RemoveOrganizationRunner(p.ctx, p.options.Owner, runner.GetID())
 			} else {
 				_, err = p.github.Actions.RemoveRunner(p.ctx, p.options.Owner, *p.options.Repository, runner.GetID())
 			}
-			return err
+			if err != nil {
+				return err
+			}
 		}
 	}
 	// runner not found

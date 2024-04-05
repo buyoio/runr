@@ -2,7 +2,6 @@ package state
 
 import (
 	"bytes"
-	"fmt"
 )
 
 func (s *HCloudServerCreateOpts) Args() ([]string, *bytes.Buffer, error) {
@@ -46,7 +45,6 @@ func (s *HCloudServerCreateOpts) Args() ([]string, *bytes.Buffer, error) {
 		if err != nil {
 			return nil, nil, err
 		}
-		fmt.Println(content)
 		_, err = data.Write([]byte(content))
 		if err != nil {
 			return nil, nil, err

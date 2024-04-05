@@ -1,8 +1,11 @@
 package cli
 
 import (
+	"os"
+
 	"github.com/spf13/cobra"
 
+	"github.com/buyoio/goodies/streams"
 	"github.com/buyoio/goodies/templates"
 	"github.com/buyoio/runr/pkg/cli/state"
 
@@ -17,8 +20,6 @@ import (
 	"github.com/buyoio/b/pkg/binary"
 	b "github.com/buyoio/b/pkg/cli"
 )
-
-var warningsAsErrors bool
 
 func NewRunrCommand() *cobra.Command {
 	cmd, o := state.NewState(
@@ -37,20 +38,18 @@ func NewRunrCommand() *cobra.Command {
 		},
 	)
 
-	// templates.AddGroup(cmd, "config", "Configuration",
-	// 	config.NewCmdConfig(o),
-	// )
-	bo := &binaries.BinaryOptions{
-		Context: cmd.Context(),
-	}
-	hc := bhcloud.Binary(bo)
+	bCmd := b.NewCmdBinary(&b.CmdBinaryOptions{
+		IO:       &streams.IO{In: os.Stdin, Out: os.Stdout, ErrOut: os.Stderr},
+		NoConfig: true,
+		Binaries: []*binary.Binary{
+			bhcloud.Binary(&binaries.BinaryOptions{
+				Context: cmd.Context(),
+			}).Binary,
+		},
+	})
+	bCmd.Short = i18n.T("Manage all required binaries")
 	templates.AddGroup(cmd, "local", "Local environment",
-		b.NewCmdBinary(&b.CmdBinaryOptions{
-			NoConfig: true,
-			Binaries: []*binary.Binary{
-				hc.Binary,
-			},
-		}),
+		bCmd,
 	)
 
 	templates.AddGroup(cmd, "ci", "Runr",

@@ -151,6 +151,13 @@ func (r *Runner) Upgrade() error {
 		return err
 	}
 
+	if r.options.Pre != nil {
+		r.logger.InfoContext(r.ctx, "Running exec pre")
+		if err := os.Exec(*r.options.Pre); err != nil {
+			return err
+		}
+	}
+
 	r.logger.InfoContext(r.ctx, "Stopping all runners")
 	if err := os.DockerStopAll(); err != nil {
 		return err
@@ -194,6 +201,13 @@ func (r *Runner) Upgrade() error {
 			); err != nil {
 				return err
 			}
+		}
+	}
+
+	if r.options.Post != nil {
+		r.logger.InfoContext(r.ctx, "Running exec post")
+		if err := os.Exec(*r.options.Post); err != nil {
+			return err
 		}
 	}
 

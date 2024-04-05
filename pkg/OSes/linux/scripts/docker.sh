@@ -2,7 +2,7 @@
 # shellcheck shell=bash disable=SC1090 disable=SC2034 disable=SC1091
 set -euo pipefail
 
-docker::cron::prune() {
+docker-cron() {
   :args "Setup docker system prune cron" "${@}"
 
   echo '%[1]s root /usr/bin/docker system prune -a --volumes --force' > /etc/cron.d/docker_system_prune
@@ -10,24 +10,24 @@ docker::cron::prune() {
 }
 
 # shellcheck disable=SC2046
-docker::stop() {
+docker-stop() {
   :args "Stop runner container" "${@}"
 
-  docker stop $(docker ps -qf "runr=runner") || :
-  docker rm -f $(docker ps -qaf "runr=runner") || :
+  docker stop $(docker ps -qf "label=runr=runner") 2>/dev/null || :
+  docker rm -f $(docker ps -qaf "label=runr=runner") 2>/dev/null || :
 }
 
-docker::build() {
+docker-build() {
+  local dockerfile
   local -a args=(
-    "dockerfile" "Dockerfile content ('-' for stdin)"
+    "dockerfile:~file" "Dockerfile"
   )
   :args "Build docker image" "${@}"
 
-  [ "${dockerfile}" != "-" ] || dockerfile="$(cat)"
-  echo "${dockerfile}" | docker build --no-cache -t github-runner:local -
+  docker build --no-cache -t github-runner:local - <"${dockerfile}"
 }
 
-docker::start() {
+docker-start() {
   local name orgrepo token labels path
   local -a args=(
     "name"    "Name of the runner"

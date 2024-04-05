@@ -37,6 +37,8 @@ type Runner struct {
 
 	Setup  *RunnerSetup             `json:"setup,omitempty" yaml:"setup,omitempty"`
 	Docker map[string]*DockerRunner `json:"docker,omitempty" yaml:"docker,omitempty"`
+	Pre    *string                  `json:"pre,omitempty" yaml:"pre,omitempty"`
+	Post   *string                  `json:"post,omitempty" yaml:"post,omitempty"`
 }
 
 type Arg struct {

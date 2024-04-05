@@ -20,12 +20,9 @@ runners:
       default: {}
       build: {}
       lint: {}
-  agent01:
-    setup:
-      harbor:
-        tld: docker.buyoio.dev
-        path: /home/user
+  agent02:
     host: 65.21.12.246:22
+    pre: lok8s harbor-ensure docker.buyo.ci --email cert@buyo.ci
 
 environments:
   hcloud:

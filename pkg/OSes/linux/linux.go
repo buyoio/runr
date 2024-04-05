@@ -1,6 +1,7 @@
 package linux
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"log/slog"
@@ -8,6 +9,7 @@ import (
 
 	gssh "golang.org/x/crypto/ssh"
 
+	scp "github.com/bramvdbogaerde/go-scp"
 	"github.com/buyoio/goodies/ssh"
 )
 
@@ -25,17 +27,44 @@ func NewLinux(ctx context.Context, logger *slog.Logger, remote *ssh.Client) *Lin
 	}
 }
 
+func (linux *Linux) scpCopy(content string, dest string) error {
+	var buff bytes.Buffer
+	_, err := buff.Write([]byte(content))
+	if err != nil {
+		return err
+	}
+	sshClient, err := linux.remote.RawClient()
+	if err != nil {
+		return err
+	}
+	scpClient, err := scp.NewClientBySSH(sshClient)
+	if err != nil {
+		return err
+	}
+	return scpClient.CopyFile(linux.ctx, &buff, dest, "0755")
+}
+
 func (linux *Linux) Prerun() error {
-	return linux.remote.Run(fmt.Sprintf(`cat <<EOF | sudo tee /usr/local/bin/lok8s
-#!/usr/bin/env bash
-set -euo pipefail
-%s`, lok8sCommand))
+	err := linux.scpCopy(lok8sScript, "/usr/local/bin/lok8s")
+	if err != nil {
+		return err
+	}
+
+	return linux.remote.Run(`
+		curl -fsSL https://min.arg.sh > /usr/local/bin/argsh
+		sudo chmod +x /usr/local/bin/argsh
+		chmod +x /usr/local/bin/lok8s
+	`)
+}
+
+func (linux *Linux) Exec(command string) error {
+	linux.logger.Debug("Executing command", "command", command)
+	return linux.remote.Run(command)
 }
 
 func (linux *Linux) executeScript(name string, args ...string) error {
 	cmd := fmt.Sprintf(
-		"%s; %s %s",
-		lok8sCommand,
+		"lok8s %s %s",
 		name,
 		strings.Join(args, " "),
 	)
@@ -54,38 +83,42 @@ func (linux *Linux) EnsureSystem() error {
 		"vim",
 		"fail2ban",
 	}
-	err := linux.executeScript("system::ensure", strings.Join(packages, " "))
+	err := linux.executeScript("system-ensure", strings.Join(packages, " "))
 	linux.remote.PossibleRebootWait()
 	return err
 }
 
 func (linux *Linux) EnsureUser(username string, password string) error {
-	return linux.executeScript("system::user", username, password)
+	return linux.executeScript("system-user", username, password)
 }
 
 func (linux *Linux) EnsureDocker(username string) error {
-	return linux.executeScript("system::docker", username)
+	return linux.executeScript("system-docker", username)
 }
 
 // 0 3 1 * *
 func (linux *Linux) DockerCronPruneSystem() error {
-	return linux.executeScript("docker::cron")
+	return linux.executeScript("docker-cron")
 }
 
 func (linux *Linux) DockerStopAll() error {
-	return linux.executeScript("docker::stop")
+	return linux.executeScript("docker-stop")
 }
 
 func (linux *Linux) DockerBuildRunner(dockerfile string) error {
-	return linux.executeScript("docker::build", dockerfile)
+	err := linux.scpCopy(dockerfile, "/tmp/Dockerfile")
+	if err != nil {
+		return err
+	}
+	return linux.executeScript("docker-build", "/tmp/Dockerfile")
 }
 
 func (linux *Linux) DockerStartRunner(name string, token string, labels string, orgrepo string, path string) error {
-	return linux.executeScript("docker::start", name, token, labels, orgrepo, path)
+	return linux.executeScript("docker-start", name, orgrepo, token, labels, path)
 }
 
 func (linux *Linux) HetznerInstallimage(installimage string) error {
-	err := linux.executeScript("hetzner::install", installimage)
+	err := linux.executeScript("hetzner-install", installimage)
 	if err != nil {
 		if e, ok := err.(*gssh.ExitError); ok && e.ExitStatus() == 127 {
 			// nothing to do

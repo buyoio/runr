@@ -20,6 +20,8 @@ type OS interface {
 	DockerBuildRunner(dockerfile string) error
 	DockerStartRunner(name string, token string, labels string, orgrepo string, path string) error
 
+	Exec(command string) error
+
 	// Hetzner specific
 	HetznerInstallimage(installimage string) error
 }

@@ -7,7 +7,6 @@ import (
 
 	"dario.cat/mergo"
 	"github.com/buyoio/goodies/ptr"
-	"github.com/qdm12/reprint"
 )
 
 const (
@@ -59,8 +58,8 @@ var defaultConfig = &State{
 
 func (state *State) aggregate(ctx context.Context, logger *slog.Logger) (*State, error) {
 	// todo maybe generate deep copy files instead of reflect
-	org := reprint.This(defaultConfig).(*State)
-	dst := reprint.This(state).(*State)
+	org := defaultConfig.DeepCopy()
+	dst := state.DeepCopy()
 
 	if err := mergo.Merge(dst, org); err != nil {
 		return nil, err

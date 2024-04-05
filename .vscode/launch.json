@@ -10,7 +10,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceRoot}/cmd/runr/main.go",
-            "args": ["runner", "get", "agent02"],
+            "args": ["runner", "up", "agent02"]
         }
     ]
 }

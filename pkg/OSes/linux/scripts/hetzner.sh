@@ -2,13 +2,13 @@
 # shellcheck shell=bash disable=SC1091
 set -euo pipefail
 
-hetzner::rescue-mode() {
+hetzner-rescue-mode() {
   [ -x /root/.oldroot/nfs/install/installimage ] || {
       return 127
   }
 }
 
-hetzner::install() {
+hetzner-install() {
   local installimage
   # shellcheck disable=SC2034
   local -a args=(
@@ -16,7 +16,7 @@ hetzner::install() {
   )
   :args "Prevision a server with a Hetzner installimage" "${@}"
 
-  hetzner::rescue-mode || {
+  hetzner-rescue-mode || {
     echo "Server is not in rescue mode" >&2
     return 1 
   }

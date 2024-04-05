@@ -10,7 +10,7 @@ import (
 
 	"github.com/buyoio/goodies/streams"
 
-	"gopkg.in/yaml.v3"
+	"gopkg.in/yaml.v2"
 )
 
 func (l *Runr) State(file ...bool) *State {

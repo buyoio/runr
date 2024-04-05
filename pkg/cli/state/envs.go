@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	envPrefix = "LOK8S"
+	envPrefix = "RUNR"
 )
 
 func (state *State) lookupEnvs() {

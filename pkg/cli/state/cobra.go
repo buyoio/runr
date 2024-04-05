@@ -26,7 +26,7 @@ func (l *Runr) persistentPreRunE(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	os.Setenv("LOK8S_CONFIG", file)
+	os.Setenv("RUNR_CONFIG", file)
 
 	err = yaml.Unmarshal(yamlFile, l.fileState)
 	if err != nil {

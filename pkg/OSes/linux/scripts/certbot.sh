@@ -4,19 +4,31 @@ set -euo pipefail
 
 import system
 
-certbot::ensure() {
-  local domain
+certbot-ensure() {
+  local domain email
   local -a args=(
     "domain" "Domain name"
+    "email|" "Email for Let's Encrypt certificate"
   )
   :args "Issue a certificate for a domain" "${@}"
 
-  system::certbot
+  local -a e=()
+  if [[ -n "${email}" ]]; then
+    e+=("--email" "${email}")
+  else
+    e+=("--register-unsafely-without-email")
+  fi
+  system-certbot
+
+  if [[ -f "/etc/letsencrypt/live/${domain}/fullchain.pem" ]]; then
+    certbot renew
+    return
+  fi
+
   certbot certonly \
     --standalone \
     --non-interactive \
     --no-redirect \
-    --register-unsafely-without-email \
     --agree-tos \
-    -d "${domain}"
+    -d "${domain}" "${e[@]}"
 }

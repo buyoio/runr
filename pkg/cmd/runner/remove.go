@@ -13,8 +13,9 @@ import (
 type CmdRemoveOptions struct {
 	*state.Runr
 
-	Name  string
-	Force bool
+	name    string
+	force   bool
+	onlySCM bool
 }
 
 func NewCmdRemoveOptions(runr *state.Runr) *CmdRemoveOptions {
@@ -29,7 +30,7 @@ func NewCmdRemove(runr *state.Runr) *cobra.Command {
 		Use:     "remove NAME",
 		Aliases: []string{"rm", "delete"},
 		Short:   i18n.T("Remove a runner"),
-		Long:    i18n.T("Remove a runner from the configuration"),
+		Long:    i18n.T("Remove a runner from the configuration and scm"),
 		Example: i18n.T(`
 			# Remove a runner from the configuration
 			runr runner remove my-runner
@@ -47,17 +48,18 @@ func NewCmdRemove(runr *state.Runr) *cobra.Command {
 }
 
 func (o *CmdRemoveOptions) AddFlags(cmd *cobra.Command) {
-	cmd.Flags().BoolVarP(&o.Force, "force", "f", false, i18n.T("Force remove"))
+	cmd.Flags().BoolVarP(&o.force, "force", "f", false, i18n.T("Force remove"))
+	cmd.Flags().BoolVarP(&o.onlySCM, "only-scm", "r", false, i18n.T("Only remove from scm"))
 }
 
 func (o *CmdRemoveOptions) Complete(cmd *cobra.Command, args []string) error {
 	if len(args) > 0 {
-		o.Name = args[0]
+		o.name = args[0]
 	}
 	return nil
 }
 func (o *CmdRemoveOptions) Validate(cmd *cobra.Command) error {
-	if o.Name == "" {
+	if o.name == "" {
 		return cmdutil.UsageErrorf(cmd, i18n.T("NAME is required"))
 	}
 	return nil
@@ -65,24 +67,26 @@ func (o *CmdRemoveOptions) Validate(cmd *cobra.Command) error {
 func (o *CmdRemoveOptions) Run() error {
 	var runner *state.Runner
 	var ok bool
-	if runner, ok = o.State().Runners[o.Name]; !ok {
-		if o.Force {
+	if runner, ok = o.State().Runners[o.name]; !ok {
+		if o.force {
 			return nil
 		}
-		return fmt.Errorf(i18n.T("No runner found with name %s"), o.Name)
+		return fmt.Errorf(i18n.T("No runner found with name %s"), o.name)
 	}
 
 	provider, err := runner.Setup.SCMPlatform.NewProvider(o.GetContext(), o.Logger())
 	if err != nil {
 		return err
 	}
-	if err := provider.RemoveRunner(o.Name); err != nil {
+	if err := provider.RemoveRunner(o.name); err != nil {
 		return err
 	}
 
-	delete(o.State(true).Runners, o.Name)
-	if err := o.Runr.Marshal(); err != nil {
-		return err
+	if !o.onlySCM {
+		delete(o.State(true).Runners, o.name)
+		if err := o.Runr.Marshal(); err != nil {
+			return err
+		}
 	}
 
 	return o.Runr.IO().Print(runner)

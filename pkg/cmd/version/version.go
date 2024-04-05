@@ -29,7 +29,7 @@ import (
 var (
 	// Magic variables set by goreleaser
 	version = "v0.0.1" // x-release-please-version
-	commit  = "16ffead"
+	commit  = ""
 	date    = "01.01.1970"
 )
 

@@ -22,7 +22,7 @@ func resolvePath(path string) string {
 }
 
 func getDefaultConfigPath() string {
-	if config := os.Getenv("LOK8S_CONFIG"); config != "" {
+	if config := os.Getenv("RUNR_CONFIG"); config != "" {
 		return config
 	}
 	config := configWalkParents()

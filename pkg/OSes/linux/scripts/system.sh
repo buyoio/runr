@@ -4,22 +4,21 @@ set -euo pipefail
 
 import github
 
-system::non-interactive() {
+system-non-interactive() {
   export DEBIAN_FRONTEND=noninteractive
   echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
 }
 
-system::root() {
+system-root() {
   [ "${EUID}" = 0 ] || sudo -i
 }
 
-system::reboot() {
+system-reboot() {
   [ ! -e /var/run/reboot-required ] || reboot
 }
 
-system::ensure() {
-  local -a packages
-  local -A args=(
+system-ensure() {
+  local -a packages args=(
     'packages' "System dependencies"
   )
   :args "Ensure system dependencies" "${@}"
@@ -28,10 +27,25 @@ system::ensure() {
   apt-get -o Dpkg::Options::="--force-confold" upgrade -q -y
   apt-get install -y "${packages[@]}"
 
-  system::reboot
+  system-reboot
 }
 
-system::docker() {
+system-user() {
+  local user
+  local -a args=(
+    'user' "System user"
+  )
+  :args "Create system user" "${@}"
+
+  id -u "${user}" &>/dev/null || {
+    useradd --create-home --shell /bin/bash "${user}"
+    addgroup wheel || :
+    usermod -aG wheel user
+    echo "%wheel ALL=(ALL) ALL" >> /etc/sudoers
+  }
+}
+
+system-docker() {
   local user force
   local -a args=(
     'user'      "User to add to docker group"
@@ -44,7 +58,7 @@ system::docker() {
   usermod -aG docker "${user}"
 }
 
-system::docker-compose() {
+system-docker-compose() {
   local -a args=(
     'force|f:+' "Force install"
   )
@@ -58,10 +72,10 @@ system::docker-compose() {
   chmod +x /usr/local/bin/docker-compose
 }
 
-system::certbot() {
+system-certbot() {
   :args "Install Certbot" "${@}"
   ! command -v certbot || return 0
 
-  system::ensure curl zip python3 python3-pip
+  system-ensure curl zip python3 python3-pip
   python3 -m pip install certbot
 }

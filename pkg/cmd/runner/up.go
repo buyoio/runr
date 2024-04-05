@@ -95,7 +95,7 @@ func (o *CmdUpgradeOptions) Run() error {
 			logger := o.Logger()
 			logs.ProgressTracker(logger, pw.AddTracker(
 				fmt.Sprintf("Upgrading runner %s", *r.Name),
-				12,
+				18,
 			))
 
 			rr, err := runner.NewRunner(

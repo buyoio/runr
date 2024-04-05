@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/buyoio/goodies/ptr"
-	"github.com/qdm12/reprint"
 )
 
 func (state *State) ExpandRunners() ([]*Runner, error) {
@@ -51,7 +50,7 @@ func (state *State) ExpandRunner(name string) (*Runner, error) {
 }
 
 func (r *Runner) ScrubSecrets() interface{} {
-	runner := reprint.This(r).(*Runner)
+	runner := r.DeepCopy()
 	if runner.Setup != nil {
 		runner.Setup.SCMPlatform.Token = defaultScrub
 	}
